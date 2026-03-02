@@ -1,0 +1,7 @@
+# robots.txt for BSS Website
+# Add this file to allow indexing of public content and block admin route.
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://www.brilliantsystemssolutions.com/sitemap.xml
