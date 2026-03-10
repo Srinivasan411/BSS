@@ -1,9 +1,13 @@
 import cors from "cors";
 import Database from "better-sqlite3";
 import express from "express";
+import crypto from "crypto";
 
 const app = express();
 const port = 4000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const adminSessions = new Map();
 
 app.use(cors());
 app.use(express.json({ limit: "200kb" }));
@@ -77,8 +81,57 @@ const testimonialsQuery = db.prepare(
   "SELECT id, name, company, feedback, rating FROM testimonials ORDER BY id DESC",
 );
 
+function createSession() {
+  const token =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : crypto.randomBytes(24).toString("hex");
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  adminSessions.set(token, expiresAt);
+  return { token, expiresAt };
+}
+
+function isSessionValid(token) {
+  if (!token || typeof token !== "string") return false;
+  const expiresAt = adminSessions.get(token);
+  if (!expiresAt) return false;
+  if (expiresAt < Date.now()) {
+    adminSessions.delete(token);
+    return false;
+  }
+  return true;
+}
+
+function requireAdmin(req, res, next) {
+  const token = req.header("x-admin-token");
+  if (!isSessionValid(token)) {
+    return res.status(401).json({ error: "Unauthorized. Please login as admin." });
+  }
+  next();
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, storage: "in-memory-sqlite" });
+});
+
+app.post("/api/admin/login", (req, res) => {
+  const password = req.body?.password;
+  if (typeof password !== "string") {
+    return res.status(400).json({ error: "password is required" });
+  }
+
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Invalid admin password" });
+  }
+
+  const session = createSession();
+  res.json({ ok: true, token: session.token, expiresAt: session.expiresAt });
+});
+
+app.post("/api/admin/logout", (req, res) => {
+  const token = req.header("x-admin-token");
+  if (token) adminSessions.delete(token);
+  res.json({ ok: true });
 });
 
 app.get("/api/content", (_req, res) => {
@@ -90,11 +143,11 @@ app.get("/api/content", (_req, res) => {
   });
 });
 
-app.get("/api/settings", (_req, res) => {
+app.get("/api/settings", requireAdmin, (_req, res) => {
   res.json({ settings: settingsQuery.all() });
 });
 
-app.put("/api/settings", (req, res) => {
+app.put("/api/settings", requireAdmin, (req, res) => {
   const settings = req.body?.settings;
   if (!settings || typeof settings !== "object") {
     return res.status(400).json({ error: "settings object is required" });
@@ -115,11 +168,11 @@ app.put("/api/settings", (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/clients", (_req, res) => {
+app.get("/api/clients", requireAdmin, (_req, res) => {
   res.json({ clients: clientsQuery.all() });
 });
 
-app.post("/api/clients", (req, res) => {
+app.post("/api/clients", requireAdmin, (req, res) => {
   const name = req.body?.name?.trim();
   const logoUrl = req.body?.logoUrl?.trim() || "";
 
@@ -137,7 +190,7 @@ app.post("/api/clients", (req, res) => {
   res.status(201).json({ client: created });
 });
 
-app.delete("/api/clients/:id", (req, res) => {
+app.delete("/api/clients/:id", requireAdmin, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: "invalid id" });
@@ -147,11 +200,11 @@ app.delete("/api/clients/:id", (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/testimonials", (_req, res) => {
+app.get("/api/testimonials", requireAdmin, (_req, res) => {
   res.json({ testimonials: testimonialsQuery.all() });
 });
 
-app.post("/api/testimonials", (req, res) => {
+app.post("/api/testimonials", requireAdmin, (req, res) => {
   const name = req.body?.name?.trim();
   const company = req.body?.company?.trim();
   const feedback = req.body?.feedback?.trim();
@@ -175,7 +228,7 @@ app.post("/api/testimonials", (req, res) => {
   res.status(201).json({ testimonial: created });
 });
 
-app.delete("/api/testimonials/:id", (req, res) => {
+app.delete("/api/testimonials/:id", requireAdmin, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: "invalid id" });
@@ -183,6 +236,11 @@ app.delete("/api/testimonials/:id", (req, res) => {
 
   db.prepare("DELETE FROM testimonials WHERE id = ?").run(id);
   res.json({ ok: true });
+});
+
+app.use((err, req, res, _next) => {
+  console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, err);
+  res.status(500).json({ error: "Internal server error. Check backend logs." });
 });
 
 app.listen(port, () => {

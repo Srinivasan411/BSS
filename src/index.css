@@ -1,10 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap");
 @import "tailwindcss";
 
 :root {
-  --bg-1: #f8fbff;
-  --bg-2: #eef6ff;
-  --text-strong: #111827;
-  --text-soft: #4b5563;
+  --bg-base: #fffdf8;
+  --bg-soft: #fff7ed;
+  --text-strong: #0f172a;
+  --text-soft: #475569;
+  --brand-1: #0f172a;
+  --brand-2: #f97316;
+  --brand-3: #f59e0b;
 }
 
 html {
@@ -15,26 +19,34 @@ body {
   margin: 0;
   min-width: 320px;
   color: var(--text-strong);
-  font-family: "Segoe UI", "Segoe UI Variable", "Trebuchet MS", sans-serif;
-  background: radial-gradient(circle at 0% 0%, #f3f8ff 0%, transparent 46%),
-    radial-gradient(circle at 100% 0%, #edf9ff 0%, transparent 40%),
-    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 0% 0%, rgb(249 115 22 / 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, rgb(15 23 42 / 0.08) 0%, transparent 36%),
+    linear-gradient(180deg, var(--bg-base) 0%, var(--bg-soft) 100%);
   overflow-x: hidden;
 }
 
+h1,
+h2,
+h3 {
+  font-family: "Sora", "Manrope", sans-serif;
+  letter-spacing: -0.02em;
+}
+
 .container-wide {
-  @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8;
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
 }
 
 .section-pad {
-  @apply py-20 sm:py-24;
+  @apply py-20 sm:py-28;
 }
 
 .glass {
-  background: linear-gradient(130deg, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0.6));
-  backdrop-filter: blur(18px);
-  border: 1px solid rgb(229 231 235 / 0.9);
-  box-shadow: 0 22px 42px -28px rgb(37 99 235 / 0.28);
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.68));
+  backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid rgb(251 191 36 / 0.25);
+  box-shadow: 0 26px 48px -32px rgb(15 23 42 / 0.32);
 }
 
 .glow-border {
@@ -44,13 +56,13 @@ body {
 .glow-border::before {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -2px;
   border-radius: inherit;
-  background: linear-gradient(125deg, rgb(59 130 246 / 0.24), rgb(34 211 238 / 0.26));
+  background: linear-gradient(125deg, rgb(15 23 42 / 0.3), rgb(249 115 22 / 0.32), rgb(245 158 11 / 0.28));
   z-index: -1;
-  filter: blur(10px);
+  filter: blur(12px);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
 }
 
 .glow-border:hover::before {
@@ -58,17 +70,30 @@ body {
 }
 
 .mesh-bg {
-  background-image: radial-gradient(at 15% 8%, rgb(59 130 246 / 0.18) 0, transparent 44%),
-    radial-gradient(at 90% 4%, rgb(34 211 238 / 0.16) 0, transparent 42%),
-    radial-gradient(at 80% 90%, rgb(56 189 248 / 0.16) 0, transparent 44%),
-    linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #ecfeff 100%);
+  position: relative;
+  background-image:
+    radial-gradient(at 12% 9%, rgb(249 115 22 / 0.15) 0, transparent 36%),
+    radial-gradient(at 95% 3%, rgb(245 158 11 / 0.16) 0, transparent 36%),
+    radial-gradient(at 85% 87%, rgb(15 23 42 / 0.12) 0, transparent 40%),
+    linear-gradient(140deg, #fffbf5 0%, #ffffff 52%, #fff7ed 100%);
+}
+
+.mesh-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgb(148 163 184 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(148 163 184 / 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at 50% 20%, black 0%, transparent 78%);
 }
 
 .blob {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(52px);
-  opacity: 0.2;
+  filter: blur(56px);
+  opacity: 0.26;
   animation: morph 18s ease-in-out infinite;
 }
 
@@ -82,8 +107,8 @@ body {
 
 .reveal-item {
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.55s ease, transform 0.65s ease;
+  transform: translateY(22px);
+  transition: opacity 0.55s ease, transform 0.7s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .reveal-item.is-visible {
@@ -112,7 +137,7 @@ body {
 .liquid-border {
   position: relative;
   background: linear-gradient(#ffffff, #ffffff) padding-box,
-    linear-gradient(125deg, #60a5fa, #22d3ee, #38bdf8) border-box;
+    linear-gradient(125deg, #0f172a, #f97316, #f59e0b) border-box;
   border: 1px solid transparent;
 }
 
@@ -128,22 +153,27 @@ body {
 .ripple-btn {
   position: relative;
   overflow: hidden;
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.ripple-btn:hover {
+  transform: translateY(-1px);
 }
 
 .ripple-dot {
   position: absolute;
   transform: translate(-50%, -50%);
   border-radius: 9999px;
-  background: rgb(14 165 233 / 0.22);
+  background: rgb(249 115 22 / 0.24);
   animation: ripple 620ms ease-out forwards;
 }
 
 .floating-label {
-  @apply peer-placeholder-shown:translate-y-2 peer-placeholder-shown:text-gray-500 peer-focus:-translate-y-3 peer-focus:text-xs peer-focus:text-blue-600;
+  @apply peer-placeholder-shown:translate-y-2 peer-placeholder-shown:text-gray-500 peer-focus:-translate-y-3 peer-focus:text-xs peer-focus:text-orange-700;
 }
 
 .form-field {
-  @apply w-full rounded-xl border border-gray-200 bg-white px-4 pb-2 pt-6 text-sm text-gray-900 placeholder-transparent outline-none transition focus:border-blue-500;
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 pb-2 pt-6 text-sm text-slate-900 placeholder-transparent outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100;
 }
 
 .nav-link {
@@ -157,7 +187,7 @@ body {
   bottom: -4px;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #2563eb, #06b6d4);
+  background: linear-gradient(90deg, #0f172a, #f97316);
   transition: width 0.25s ease;
 }
 
@@ -165,8 +195,41 @@ body {
   width: 100%;
 }
 
+#testimonials {
+  background:
+    radial-gradient(circle at 8% 15%, rgb(245 158 11 / 0.15), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgb(249 115 22 / 0.14), transparent 42%),
+    linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
+}
+
+#newsroom article,
+#products article,
+#pricing article {
+  border-color: rgb(226 232 240 / 0.85);
+}
+
 .avatar-float {
   animation: avatarFloat 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .blob,
+  .marquee-track,
+  .avatar-float,
+  .reveal-item,
+  .ripple-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .reveal-item {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes morph {

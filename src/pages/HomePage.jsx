@@ -302,11 +302,11 @@ export default function HomePage() {
 
           <div className="hidden items-center gap-7 text-sm text-gray-700 lg:flex">
             {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="nav-link transition hover:text-blue-700">
+              <a key={link.href} href={link.href} className="nav-link transition hover:text-orange-600">
                 {link.label}
               </a>
             ))}
-            <Link to="/admin" className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-2 font-semibold text-white shadow-lg transition hover:shadow-xl">
+            <Link to="/admin" className="rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 font-semibold text-white shadow-lg transition hover:shadow-xl">
               Admin
             </Link>
           </div>
@@ -320,7 +320,7 @@ export default function HomePage() {
                   {link.label}
                 </a>
               ))}
-              <Link to="/admin" onClick={() => setMobileOpen(false)} className="rounded-md border border-cyan-300/50 px-3 py-2 text-blue-700">
+              <Link to="/admin" onClick={() => setMobileOpen(false)} className="rounded-md border border-orange-300/60 px-3 py-2 text-orange-700">
                 Admin
               </Link>
             </div>
@@ -328,16 +328,16 @@ export default function HomePage() {
         ) : null}
       </header>
 
-      <main className="mesh-bg relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50 text-gray-700 [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900">
+      <main className="mesh-bg relative overflow-hidden bg-white text-gray-700 [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900">
         <section id="home" className="relative overflow-hidden pt-28 sm:pt-32">
-          <div className="blob -left-20 top-20 h-56 w-56 bg-blue-400/70" style={{ transform: `translateY(${parallaxY * 0.4}px)` }} />
-          <div className="blob right-8 top-10 h-40 w-40 bg-indigo-400/70" style={{ transform: `translateY(${-parallaxY * 0.25}px)` }} />
-          <div className="blob bottom-8 right-[-5%] h-64 w-64 bg-cyan-300/70" style={{ transform: `translateY(${parallaxY * 0.3}px)` }} />
+          <div className="blob -left-20 top-20 h-56 w-56 bg-orange-300/70" style={{ transform: `translateY(${parallaxY * 0.4}px)` }} />
+          <div className="blob right-8 top-10 h-40 w-40 bg-slate-300/60" style={{ transform: `translateY(${-parallaxY * 0.25}px)` }} />
+          <div className="blob bottom-8 right-[-5%] h-64 w-64 bg-amber-300/60" style={{ transform: `translateY(${parallaxY * 0.3}px)` }} />
 
           <div className="container-wide section-pad relative z-10">
             <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
               <div className="reveal-item">
-                <p className="mb-5 inline-flex rounded-full border border-cyan-300/40 bg-white px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+                <p className="mb-5 inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
                   Premium Enterprise Technology
                 </p>
                 <h1 className="max-w-4xl text-4xl font-black leading-[1.15] text-gray-900 sm:text-5xl lg:text-6xl">
@@ -345,10 +345,10 @@ export default function HomePage() {
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-8 text-gray-600 sm:text-lg">{heroSubheading}</p>
                 <div className="mt-8 flex flex-wrap gap-4">
-                  <RippleButton href="#contact" className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl">
+                  <RippleButton href="#contact" className="rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl">
                     Get Free Consultation
                   </RippleButton>
-                  <RippleButton href="#products" className="rounded-xl border border-blue-500 bg-white px-6 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50">
+                  <RippleButton href="#products" className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
                     Explore Products
                   </RippleButton>
                 </div>
@@ -359,7 +359,7 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-gray-600">
                   Secure IT, AI automation, and people operations consulting delivered as one integrated engagement model.
                 </p>
-                <ul className="mt-5 space-y-4 text-sm text-blue-700">
+                <ul className="mt-5 space-y-4 text-sm text-slate-700">
                   <li>- Enterprise-first architecture and governance</li>
                   <li>- Productized accelerators for faster go-live</li>
                   <li>- Continuous optimization and strategic advisory</li>
@@ -395,8 +395,8 @@ export default function HomePage() {
             <article className="glass reveal-item rounded-3xl p-7 sm:p-9">
               <h3 className="text-2xl font-semibold">Associated Companies</h3>
               <div className="mt-6 space-y-4">
-                <div className="rounded-2xl border border-cyan-300/30 bg-white p-4 transition hover:scale-[1.02]">Brilliant Systems Solutions, Madurai</div>
-                <div className="rounded-2xl border border-cyan-300/30 bg-white p-4 transition hover:scale-[1.02]">Yangkhor Private Limited, Bhutan</div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:scale-[1.02]">Brilliant Systems Solutions, Madurai</div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:scale-[1.02]">Yangkhor Private Limited, Bhutan</div>
               </div>
             </article>
           </div>
@@ -414,16 +414,16 @@ export default function HomePage() {
             <div className="liquid-border glow-border mt-8 rounded-3xl p-6 sm:p-8">
               <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
                 <article className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl">
-                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" />
+                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
                   <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                    <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
                       {currentProduct.badge}
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                       {currentProduct.subtitle}
                     </span>
                   </div>
-                  <div className="h-44 rounded-xl bg-gradient-to-br from-blue-300/45 via-indigo-300/35 to-cyan-300/45" aria-hidden="true" />
+                  <div className="h-44 rounded-xl bg-gradient-to-br from-orange-100 via-amber-50 to-slate-100" aria-hidden="true" />
                   <h3 className="mt-5 text-2xl font-bold">{currentProduct.name}</h3>
                   <p className="mt-3 text-sm leading-7 text-gray-600">{currentProduct.description}</p>
                   <ul className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -433,7 +433,7 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <RippleButton href="#contact" className="mt-5 inline-flex rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-2 text-sm font-semibold text-white">
+                  <RippleButton href="#contact" className="mt-5 inline-flex rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 text-sm font-semibold text-white">
                     Get Access
                   </RippleButton>
                 </article>
@@ -446,8 +446,8 @@ export default function HomePage() {
                       onClick={() => setProductIndex(index)}
                       className={`block w-full rounded-xl border px-4 py-3 text-left transition ${
                         productIndex === index
-                          ? "border-cyan-300 bg-gradient-to-r from-blue-600 to-cyan-500/20 text-blue-700 shadow-md"
-                          : "border-gray-100 bg-white text-gray-600 hover:border-cyan-300/55"
+                          ? "border-orange-300 bg-orange-50 text-orange-800 shadow-md"
+                          : "border-gray-100 bg-white text-gray-600 hover:border-orange-300/70"
                       }`}
                       aria-label={`View ${product.name}`}
                     >
@@ -459,7 +459,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setProductIndex((prev) => (prev === 0 ? products.length - 1 : prev - 1))}
-                      className="mr-2 rounded-full border border-blue-200 px-3 py-1 text-xs"
+                      className="mr-2 rounded-full border border-orange-200 px-3 py-1 text-xs text-slate-700"
                       aria-label="Previous product"
                     >
                       Prev
@@ -467,7 +467,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setProductIndex((prev) => (prev + 1) % products.length)}
-                      className="rounded-full border border-blue-200 px-3 py-1 text-xs"
+                      className="rounded-full border border-orange-200 px-3 py-1 text-xs text-slate-700"
                       aria-label="Next product"
                     >
                       Next
@@ -481,7 +481,7 @@ export default function HomePage() {
                         onClick={() => setProductIndex(index)}
                         aria-label={`Go to ${product.name}`}
                         className={`h-2.5 rounded-full transition ${
-                          productIndex === index ? "w-8 bg-blue-600" : "w-2.5 bg-gray-300"
+                          productIndex === index ? "w-8 bg-orange-600" : "w-2.5 bg-gray-300"
                         }`}
                       />
                     ))}
@@ -501,13 +501,13 @@ export default function HomePage() {
               <p className="mt-4 text-gray-600">
                 Product-led acceleration plus consulting-led governance gives leadership teams confidence across technology, process, and compliance.
               </p>
-              <ul className="mt-6 space-y-3 text-sm text-blue-700">
+              <ul className="mt-6 space-y-3 text-sm text-slate-700">
                 <li>- Unified dashboards for operations, HR, and IT decision-making</li>
                 <li>- AI-assisted workflow orchestration with role-based controls</li>
                 <li>- SLA-backed implementation and continuous optimization cycles</li>
               </ul>
             </article>
-            <article className="reveal-item rounded-3xl border border-cyan-300/25 bg-gradient-to-br from-blue-500/25 to-indigo-500/20 p-8">
+            <article className="reveal-item rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-8">
               <h3 className="text-2xl font-semibold">Story-Led Delivery</h3>
               <p className="mt-3 text-gray-600">
                 From strategy workshops to production rollouts, every phase maps directly to executive outcomes and measurable value realization.
@@ -528,8 +528,8 @@ export default function HomePage() {
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {services.map((service) => (
                 <article key={service.title} className="service-tilt reveal-item rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl">
-                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" />
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 font-bold text-white shadow-md">
+                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-700 font-bold text-white shadow-md">
                     {service.title.slice(0, 2).toUpperCase()}
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">{service.title}</h3>
@@ -541,7 +541,7 @@ export default function HomePage() {
         </section>
 
         <section id="pricing" className="section-pad relative overflow-hidden">
-          <div className="blob left-[-5%] top-16 h-44 w-44 bg-cyan-300/50" />
+          <div className="blob left-[-5%] top-16 h-44 w-44 bg-orange-200/60" />
           <div className="container-wide relative z-10">
             <div className="reveal-item flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-3xl font-bold sm:text-4xl">Pricing Plans</h2>
@@ -549,14 +549,14 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setPricingMode("monthly")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "monthly" ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md" : "text-gray-700"}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "monthly" ? "bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-md" : "text-gray-700"}`}
                 >
                   Monthly
                 </button>
                 <button
                   type="button"
                   onClick={() => setPricingMode("yearly")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "yearly" ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md" : "text-gray-700"}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "yearly" ? "bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-md" : "text-gray-700"}`}
                 >
                   Yearly
                 </button>
@@ -568,12 +568,12 @@ export default function HomePage() {
                 <article
                   key={plan.name}
                   className={`reveal-item rounded-2xl border bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl ${
-                    plan.featured ? "ring-2 ring-blue-500 border-blue-200" : "border-gray-100"
+                    plan.featured ? "ring-2 ring-orange-400 border-orange-200" : "border-gray-100"
                   }`}
                 >
-                  <div className="mb-5 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" />
+                  <div className="mb-5 h-1 w-24 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
                   <h3 className="text-2xl font-semibold">{plan.name}</h3>
-                  <p className="mt-3 text-3xl font-black text-blue-600">
+                  <p className="mt-3 text-3xl font-black text-slate-900">
                     {plan.amount ? `$${plan.amount}` : "Custom"}
                     <span className="text-sm font-medium text-gray-500">{plan.amount ? pricingMode === "monthly" ? " /month" : " /year" : ""}</span>
                   </p>
@@ -582,7 +582,7 @@ export default function HomePage() {
                     <li>- Security-first delivery</li>
                     <li>- SLA-backed support</li>
                   </ul>
-                  <RippleButton href="#contact" className="mt-6 inline-flex w-full justify-center rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-2 text-sm font-semibold text-white">
+                  <RippleButton href="#contact" className="mt-6 inline-flex w-full justify-center rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 text-sm font-semibold text-white">
                     Choose Plan
                   </RippleButton>
                 </article>
@@ -597,7 +597,7 @@ export default function HomePage() {
             <div className="marquee reveal-item mt-8 overflow-hidden rounded-2xl border border-gray-100 bg-transparent p-4">
               <div className="marquee-track gap-4">
                 {clientLogos.map((client, index) => (
-                  <div key={`${client.id}-${index}`} className="flex min-w-[180px] items-center justify-center rounded-xl border border-gray-100 bg-white px-4 py-5 text-sm font-semibold text-gray-500 grayscale transition hover:grayscale-0 hover:text-blue-600">
+                  <div key={`${client.id}-${index}`} className="flex min-w-[180px] items-center justify-center rounded-xl border border-gray-100 bg-white px-4 py-5 text-sm font-semibold text-gray-500 grayscale transition hover:grayscale-0 hover:text-orange-600">
                     {client.logoUrl ? (
                       <img src={client.logoUrl} alt={client.name} className="h-8 w-auto object-contain" loading="lazy" />
                     ) : (
@@ -628,9 +628,9 @@ export default function HomePage() {
                 </div>
 
                 <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-gray-700 md:text-xl">
-                  <span className="text-3xl text-blue-300">"</span>
+                  <span className="text-3xl text-orange-300">"</span>
                   {activeTestimonial.feedback}
-                  <span className="text-3xl text-blue-300">"</span>
+                  <span className="text-3xl text-orange-300">"</span>
                 </p>
 
                 <div className="mt-8 flex items-center justify-center gap-3">
@@ -654,7 +654,7 @@ export default function HomePage() {
                       onClick={() => setTestimonialIndex(idx)}
                       aria-label={`Go to testimonial ${idx + 1}`}
                       className={`h-2.5 rounded-full transition ${
-                        idx === testimonialIndex ? "w-8 bg-blue-600" : "w-2.5 bg-gray-300"
+                        idx === testimonialIndex ? "w-8 bg-orange-600" : "w-2.5 bg-gray-300"
                       }`}
                     />
                   ))}
@@ -669,14 +669,14 @@ export default function HomePage() {
             <h2 className="reveal-item text-3xl font-bold sm:text-4xl">Newsroom</h2>
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {newsroomItems.map((item) => (
-                <article key={item.title} className="reveal-item overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-[0_24px_42px_-30px_rgba(34,211,238,0.8)]">
-                  <div className="h-36 overflow-hidden rounded-xl bg-blue-50">
-                    <div className="h-full w-full bg-gradient-to-br from-blue-300/40 to-cyan-300/40 transition duration-300 hover:scale-110" />
+                <article key={item.title} className="reveal-item overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-[0_24px_42px_-30px_rgba(245,158,11,0.5)]">
+                  <div className="h-36 overflow-hidden rounded-xl bg-orange-50">
+                    <div className="h-full w-full bg-gradient-to-br from-orange-200/50 to-amber-200/50 transition duration-300 hover:scale-110" />
                   </div>
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-blue-600">{item.date}</p>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-orange-700">{item.date}</p>
                   <h3 className="mt-2 text-lg font-semibold">{item.title}</h3>
                   <p className="mt-2 text-sm text-gray-600">{item.summary}</p>
-                  <a href="#newsroom" className="mt-4 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700">
+                  <a href="#newsroom" className="mt-4 inline-flex text-sm font-semibold text-slate-900 hover:text-orange-700">
                     Read More
                   </a>
                 </article>
@@ -687,12 +687,12 @@ export default function HomePage() {
 
         <section id="careers" className="section-pad">
           <div className="container-wide">
-            <div className="reveal-item rounded-3xl border border-cyan-300/35 bg-gradient-to-r from-blue-500/30 via-indigo-500/30 to-cyan-500/30 p-8 text-center backdrop-blur-sm sm:p-10">
+            <div className="reveal-item rounded-3xl border border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-white p-8 text-center backdrop-blur-sm sm:p-10">
               <h2 className="text-3xl font-bold sm:text-4xl">Join Our Growing Team</h2>
               <p className="mx-auto mt-3 max-w-3xl text-gray-700">
                 Build meaningful enterprise products and consulting solutions with a team that values quality, speed, and innovation.
               </p>
-              <RippleButton href="/careers" className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white">
+              <RippleButton href="/careers" className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-3 text-sm font-bold text-white">
                 Explore Careers
               </RippleButton>
             </div>
@@ -706,8 +706,8 @@ export default function HomePage() {
               <p className="mt-4 text-gray-600">
                 Share your requirements and get a tailored strategy consultation from our team.
               </p>
-              <p className="mt-2 text-sm text-blue-600">Contact email: {contactEmail}</p>
-              <p className="mt-5 rounded-xl border border-cyan-300/40 bg-cyan-50 px-4 py-3 text-sm text-blue-700">
+              <p className="mt-2 text-sm text-slate-700">Contact email: {contactEmail}</p>
+              <p className="mt-5 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-slate-700">
                 Spam prevention: We never ask for OTPs, passwords, or payment data in this form.
               </p>
             </article>
@@ -780,7 +780,7 @@ export default function HomePage() {
                 as="button"
                 type="submit"
                 className={`mt-6 rounded-xl px-6 py-3 text-sm font-bold ${
-                  submitLoading ? "bg-slate-400 text-slate-700" : "bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
+                  submitLoading ? "bg-slate-400 text-slate-700" : "bg-gradient-to-r from-slate-900 to-slate-700 text-white"
                 }`}
                 disabled={submitLoading}
               >
@@ -912,7 +912,7 @@ function RippleButton({ as = "a", href, type = "button", className, children, di
 const StatCard = memo(function StatCard({ label, value, suffix }) {
   return (
     <div className="glass reveal-item rounded-2xl p-5">
-      <div className="text-3xl font-black text-blue-600">
+      <div className="text-3xl font-black text-slate-900">
         {value}
         {suffix}
       </div>
@@ -924,7 +924,7 @@ const StatCard = memo(function StatCard({ label, value, suffix }) {
 const IconGlass = memo(function IconGlass({ title, icon }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 transition hover:scale-[1.03]">
-      <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-400 to-cyan-300 text-sm font-bold text-white">
+      <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-sm font-bold text-white">
         {icon}
       </div>
       <p className="text-sm font-semibold">{title}</p>
@@ -971,4 +971,5 @@ function WaveDivider({ className, flip = false }) {
     </div>
   );
 }
+
 

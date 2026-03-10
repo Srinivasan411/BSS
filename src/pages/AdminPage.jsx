@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  clearAdminToken,
   createClient,
   createTestimonial,
   deleteClient,
   deleteTestimonial,
+  getAdminToken,
   getContent,
+  loginAdmin,
+  logoutAdmin,
   updateSettings,
 } from "../api";
 
@@ -25,6 +29,23 @@ export default function AdminPage() {
   const [clientForm, setClientForm] = useState(initialClient);
   const [testimonialForm, setTestimonialForm] = useState(initialTestimonial);
   const [message, setMessage] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getAdminToken()));
+
+  function handleUnauthorized() {
+    clearAdminToken();
+    setIsAuthenticated(false);
+    setMessage("Admin session expired. Please login again.");
+  }
+
+  function handleApiError(error, fallbackMessage) {
+    if (error?.message?.toLowerCase().includes("unauthorized")) {
+      handleUnauthorized();
+      return;
+    }
+    setMessage(error?.message || fallbackMessage);
+  }
 
   async function load() {
     try {
@@ -32,30 +53,54 @@ export default function AdminPage() {
       setSettings((prev) => ({ ...prev, ...payload.settings }));
       setClients(payload.clients || []);
       setTestimonials(payload.testimonials || []);
-    } catch {
-      setMessage("Failed to load admin data.");
+    } catch (error) {
+      handleApiError(error, "Failed to load admin data.");
     }
   }
 
   useEffect(() => {
-    let mounted = true;
+    if (!isAuthenticated) return;
+    load();
+  }, [isAuthenticated]);
 
-    getContent()
-      .then((payload) => {
-        if (!mounted) return;
-        setSettings((prev) => ({ ...prev, ...payload.settings }));
-        setClients(payload.clients || []);
-        setTestimonials(payload.testimonials || []);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setMessage("Failed to load admin data.");
-      });
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    if (!adminPassword.trim()) return;
+    setMessage("");
+    setLoginLoading(true);
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    try {
+      await loginAdmin(adminPassword);
+      setIsAuthenticated(true);
+      setAdminPassword("");
+      setMessage("Admin login successful.");
+    } catch (error) {
+      handleApiError(error, "Login failed.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutAdmin();
+    } catch {
+      clearAdminToken();
+    }
+    setIsAuthenticated(false);
+    setSettings({
+      companyName: "",
+      heroHeading: "",
+      heroSubheading: "",
+      contactEmail: "",
+      whatsappNumber: "",
+    });
+    setClients([]);
+    setTestimonials([]);
+    setClientForm(initialClient);
+    setTestimonialForm(initialTestimonial);
+    setMessage("Logged out.");
+  };
 
   const saveSettings = async (event) => {
     event.preventDefault();
@@ -64,7 +109,7 @@ export default function AdminPage() {
       await updateSettings(settings);
       setMessage("Common settings updated.");
     } catch (error) {
-      setMessage(error.message);
+      handleApiError(error, "Failed to update settings.");
     }
   };
 
@@ -78,7 +123,18 @@ export default function AdminPage() {
       await load();
       setMessage("Client added.");
     } catch (error) {
-      setMessage(error.message);
+      handleApiError(error, "Failed to add client.");
+    }
+  };
+
+  const removeClient = async (id) => {
+    setMessage("");
+    try {
+      await deleteClient(id);
+      await load();
+      setMessage("Client removed.");
+    } catch (error) {
+      handleApiError(error, "Failed to delete client.");
     }
   };
 
@@ -94,18 +150,80 @@ export default function AdminPage() {
       await load();
       setMessage("Testimonial added.");
     } catch (error) {
-      setMessage(error.message);
+      handleApiError(error, "Failed to add testimonial.");
     }
   };
+
+  const removeTestimonial = async (id) => {
+    setMessage("");
+    try {
+      await deleteTestimonial(id);
+      await load();
+      setMessage("Testimonial removed.");
+    } catch (error) {
+      handleApiError(error, "Failed to delete testimonial.");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-bold text-slate-900">Admin Login</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Use the default password: <span className="font-semibold">admin123</span>
+          </p>
+
+          {message ? (
+            <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{message}</p>
+          ) : null}
+
+          <form onSubmit={handleLogin} className="mt-4 space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Password</label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="Enter admin password"
+                autoComplete="current-password"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-300"
+            >
+              {loginLoading ? "Signing in..." : "Login"}
+            </button>
+          </form>
+
+          <Link to="/" className="mt-4 inline-block text-sm font-semibold text-indigo-700">
+            Back to Site
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between gap-3">
           <h1 className="text-3xl font-bold text-slate-900">BSS Admin Panel</h1>
-          <Link to="/" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-            Back to Site
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+              Back to Site
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {message ? <p className="mb-6 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</p> : null}
@@ -176,10 +294,7 @@ export default function AdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={async () => {
-                    await deleteClient(client.id);
-                    load();
-                  }}
+                  onClick={() => removeClient(client.id)}
                   className="rounded-md bg-rose-100 px-3 py-1 text-sm font-medium text-rose-700"
                 >
                   Delete
@@ -232,10 +347,7 @@ export default function AdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={async () => {
-                    await deleteTestimonial(item.id);
-                    load();
-                  }}
+                  onClick={() => removeTestimonial(item.id)}
                   className="rounded-md bg-rose-100 px-3 py-1 text-sm font-medium text-rose-700"
                 >
                   Delete
