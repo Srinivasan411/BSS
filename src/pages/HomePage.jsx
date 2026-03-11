@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getContent } from "../api";
 import CookieConsent from "../components/CookieConsent";
@@ -9,15 +9,15 @@ import { sanitizeFormData } from "../utils/sanitize";
 import { validateLeadForm } from "../utils/validation";
 
 const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "Products", href: "#products" },
-  { label: "Services", href: "#services" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Clients", href: "#clients" },
-  { label: "Testimonials", href: "#testimonials" },
-  { label: "Newsroom", href: "#newsroom" },
-  { label: "Careers", href: "#careers" },
-  { label: "Contact", href: "#contact" },
+  { label: "About", id: "about" },
+  { label: "Products", id: "products" },
+  { label: "Services", id: "services" },
+  { label: "Pricing", id: "pricing" },
+  { label: "Clients", id: "clients" },
+  { label: "Testimonials", id: "testimonials" },
+  { label: "Newsroom", id: "newsroom" },
+  { label: "Careers", id: "careers" },
+  { label: "Contact", id: "contact" },
 ];
 
 const products = [
@@ -129,7 +129,8 @@ function useCountUp(target, started) {
 }
 
 export default function HomePage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
   const [showTopButton, setShowTopButton] = useState(false);
   const [statsVisible, setStatsVisible] = useState(false);
@@ -138,6 +139,7 @@ export default function HomePage() {
   const [content, setContent] = useState({ settings: {}, clients: [], testimonials: [] });
   const [productIndex, setProductIndex] = useState(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [expandedTestimonialId, setExpandedTestimonialId] = useState(null);
   const [formData, setFormData] = useState(initialForm);
   const [formErrors, setFormErrors] = useState({});
   const [formSuccess, setFormSuccess] = useState(false);
@@ -145,6 +147,9 @@ export default function HomePage() {
   const [formStartedAt] = useState(() => Date.now());
   const [formMessage, setFormMessage] = useState("");
   const [cookieManagerOpen, setCookieManagerOpen] = useState(false);
+  const headerRef = useRef(null);
+  const lastActiveElementRef = useRef(null);
+  const demoFirstFieldRef = useRef(null);
 
   useEffect(() => {
     getContent()
@@ -207,7 +212,7 @@ export default function HomePage() {
     if (content.testimonials.length < 2) return;
     const timer = setInterval(() => {
       setTestimonialIndex((prev) => (prev + 1) % content.testimonials.length);
-    }, 4500);
+    }, 6500);
     return () => clearInterval(timer);
   }, [content.testimonials.length]);
 
@@ -226,20 +231,91 @@ export default function HomePage() {
   const canonicalUrl = "https://www.brilliantsystemssolutions.com/";
   const ogImage = `${canonicalUrl}og-image.jpg`;
 
+  const scrollToSection = useCallback((id) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    const headerOffset = headerRef.current?.getBoundingClientRect().height ?? 0;
+    const y = target.getBoundingClientRect().top + window.scrollY - Math.min(200, headerOffset + 12);
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  const openDemo = useCallback(() => {
+    lastActiveElementRef.current = document.activeElement;
+    setDemoOpen(true);
+  }, []);
+
+  const closeDemo = useCallback(() => {
+    setDemoOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!demoOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") closeDemo();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    setTimeout(() => demoFirstFieldRef.current?.focus(), 0);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+      lastActiveElementRef.current?.focus?.();
+    };
+  }, [closeDemo, demoOpen]);
+
+  useEffect(() => {
+    if (!demoOpen) return;
+    if (!formSuccess) return;
+    const timer = setTimeout(() => setDemoOpen(false), 1200);
+    return () => clearTimeout(timer);
+  }, [demoOpen, formSuccess]);
+
   const clientLogos = useMemo(() => {
     const base = content.clients.length > 0 ? content.clients : [{ id: 0, name: "Your Logo", logoUrl: "" }];
     return [...base, ...base];
   }, [content.clients]);
 
   const currentProduct = products[productIndex];
-  const activeTestimonial =
-    content.testimonials[testimonialIndex] || {
-      id: 0,
-      name: "Client Name",
-      company: "Company",
-      rating: 5,
-      feedback: "Add testimonials from /admin to display customer feedback here.",
-    };
+  const testimonials = useMemo(() => {
+    if (content.testimonials.length > 0) return content.testimonials;
+    return [
+      {
+        id: "seed-1",
+        name: "Client Name",
+        company: "Company",
+        rating: 5,
+        feedback: "Add testimonials from /admin to display customer feedback here.",
+      },
+      {
+        id: "seed-2",
+        name: "Client Name",
+        company: "Company",
+        rating: 5,
+        feedback: "Share project outcomes, delivery experience, and customer impact to build trust.",
+      },
+      {
+        id: "seed-3",
+        name: "Client Name",
+        company: "Company",
+        rating: 5,
+        feedback: "You can add multiple testimonials in the Admin portal and they will appear here automatically.",
+      },
+    ];
+  }, [content.testimonials]);
+
+  const testimonialCount = testimonials.length;
+  const safeIndex = testimonialCount ? ((testimonialIndex % testimonialCount) + testimonialCount) % testimonialCount : 0;
+  const getTestimonial = (offset) => testimonials[(safeIndex + offset) % testimonialCount];
   const pricingCards = plans[pricingMode];
 
   const submitForm = async (event) => {
@@ -279,65 +355,217 @@ export default function HomePage() {
         contactEmail={contactEmail}
       />
 
-      <header
-        className={`fixed inset-x-0 top-0 z-50 border-b border-gray-100 backdrop-blur-lg transition ${
-          navScrolled ? "bg-white/70 shadow-md" : "bg-white/40"
-        }`}
-      >
-        <nav className="container-wide flex items-center justify-between py-4">
-          <a href="#home" className="text-base font-bold tracking-[0.16em] text-gray-900 sm:text-lg">
-            BSS
-          </a>
-
-          <button
-            type="button"
-            className="rounded-lg border border-gray-200 p-2 text-gray-900 lg:hidden"
-            onClick={() => setMobileOpen((prev) => !prev)}
-            aria-label="Toggle menu"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </button>
-
-          <div className="hidden items-center gap-7 text-sm text-gray-700 lg:flex">
-            {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="nav-link transition hover:text-orange-600">
-                {link.label}
-              </a>
-            ))}
-            <Link to="/admin" className="rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 font-semibold text-white shadow-lg transition hover:shadow-xl">
-              Admin
-            </Link>
+      <div ref={headerRef} className="fixed inset-x-0 top-0 z-50">
+        <div className="bg-[color:var(--brand-dark)] text-white">
+          <div className="container-wide flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs font-medium tracking-wide sm:text-sm">
+              AI-driven content, data & process automation for enterprises - book a demo today.
+            </p>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <SocialLink href="https://www.linkedin.com" label="LinkedIn">
+                <LinkedInIcon />
+              </SocialLink>
+              <SocialLink href="https://www.facebook.com" label="Facebook">
+                <FacebookIcon />
+              </SocialLink>
+              <SocialLink href="https://x.com" label="X">
+                <XIcon />
+              </SocialLink>
+              <SocialLink href="https://www.instagram.com" label="Instagram">
+                <InstagramIcon />
+              </SocialLink>
+              <SocialLink href={`https://wa.me/${whatsappNumber}`} label="WhatsApp">
+                <WhatsAppIcon />
+              </SocialLink>
+            </div>
           </div>
-        </nav>
+        </div>
 
-        {mobileOpen ? (
-          <div className="border-t border-gray-100 bg-white/90 px-4 py-3 lg:hidden">
-            <div className="flex flex-col gap-3 text-sm text-gray-700">
-              {navLinks.map((link) => (
-                <a key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
-                  {link.label}
-                </a>
-              ))}
-              <Link to="/admin" onClick={() => setMobileOpen(false)} className="rounded-md border border-orange-300/60 px-3 py-2 text-orange-700">
+        <header
+          className={`border-b border-gray-100 backdrop-blur-lg transition ${
+            navScrolled ? "bg-white/80 shadow-md" : "bg-white/60"
+          }`}
+        >
+          <nav className="container-wide flex items-center justify-between py-4">
+            <button
+              type="button"
+              onClick={() => scrollToSection("home")}
+              className="max-w-[220px] truncate text-left text-base font-semibold tracking-wide text-[color:var(--brand-dark)] sm:max-w-none sm:text-lg"
+              aria-label="Go to top"
+            >
+              {companyName}
+            </button>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
+                aria-label="Open menu"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <span className="hidden sm:inline">Menu</span>
+              </button>
+
+              <RippleButton
+                as="button"
+                type="button"
+                onClick={openDemo}
+                className="rounded-lg bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl"
+              >
+                Schedule Demo
+              </RippleButton>
+
+              <Link
+                to="/admin"
+                className="hidden rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 sm:inline-flex"
+              >
                 Admin
               </Link>
             </div>
+          </nav>
+        </header>
+      </div>
+
+      {menuOpen ? (
+        <div className="fixed inset-0 z-[60]">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-slate-900/35 backdrop-blur-[2px]"
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+          />
+          <aside className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto bg-white p-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-900">Navigation</p>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-md border border-slate-200 bg-white p-2 text-slate-800 transition hover:bg-slate-50"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              {navLinks.map((link) => {
+                const id = link.id;
+                return (
+                  <button
+                    key={link.id}
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (id === "contact") {
+                        openDemo();
+                        return;
+                      }
+                      scrollToSection(id);
+                    }}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                  >
+                    {link.label}
+                    <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                );
+              })}
+
+              <div className="mt-2 grid gap-2">
+                <RippleButton
+                  as="button"
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    openDemo();
+                  }}
+                  className="w-full justify-center rounded-xl bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-4 py-3 text-sm font-semibold text-white shadow-lg"
+                >
+                  Schedule Demo
+                </RippleButton>
+                <Link
+                  to="/admin"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                >
+                  Admin
+                </Link>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {demoOpen ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px]"
+            aria-label="Close demo form"
+            onClick={closeDemo}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Book a demo form"
+            className="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[0_40px_90px_-55px_rgba(15,23,42,0.75)]"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:px-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--brand-primary)]">
+                  Schedule a demo
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">Hire to Retire Solution Demonstration</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Share your details and we will reach out to schedule a live walkthrough.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeDemo}
+                className="rounded-xl border border-slate-200 bg-white p-2 text-slate-800 shadow-sm transition hover:bg-slate-50"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="max-h-[calc(100vh-10rem)] overflow-y-auto px-6 py-6 sm:px-8">
+              <LeadForm
+                idPrefix="demo"
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+                firstFieldRef={demoFirstFieldRef}
+                formData={formData}
+                formErrors={formErrors}
+                setFormData={setFormData}
+                submitForm={submitForm}
+                submitLoading={submitLoading}
+                formSuccess={formSuccess}
+                formMessage={formMessage}
+              />
+            </div>
           </div>
-        ) : null}
-      </header>
+        </div>
+      ) : null}
 
       <main className="mesh-bg relative overflow-hidden bg-white text-gray-700 [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900">
-        <section id="home" className="relative overflow-hidden pt-28 sm:pt-32">
-          <div className="blob -left-20 top-20 h-56 w-56 bg-orange-300/70" style={{ transform: `translateY(${parallaxY * 0.4}px)` }} />
+        <section id="home" className="relative overflow-hidden pt-44 sm:pt-48">
+          <div className="blob -left-20 top-20 h-56 w-56 bg-blue-300/70" style={{ transform: `translateY(${parallaxY * 0.4}px)` }} />
           <div className="blob right-8 top-10 h-40 w-40 bg-slate-300/60" style={{ transform: `translateY(${-parallaxY * 0.25}px)` }} />
-          <div className="blob bottom-8 right-[-5%] h-64 w-64 bg-amber-300/60" style={{ transform: `translateY(${parallaxY * 0.3}px)` }} />
+          <div className="blob bottom-8 right-[-5%] h-64 w-64 bg-blue-300/60" style={{ transform: `translateY(${parallaxY * 0.3}px)` }} />
 
           <div className="container-wide section-pad relative z-10">
             <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
               <div className="reveal-item">
-                <p className="mb-5 inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
+                <p className="mb-5 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
                   Premium Enterprise Technology
                 </p>
                 <h1 className="max-w-4xl text-4xl font-black leading-[1.15] text-gray-900 sm:text-5xl lg:text-6xl">
@@ -345,10 +573,10 @@ export default function HomePage() {
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-8 text-gray-600 sm:text-lg">{heroSubheading}</p>
                 <div className="mt-8 flex flex-wrap gap-4">
-                  <RippleButton href="#contact" className="rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl">
+                  <RippleButton as="button" type="button" onClick={openDemo} className="rounded-xl bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl">
                     Get Free Consultation
                   </RippleButton>
-                  <RippleButton href="#products" className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
+                  <RippleButton as="button" type="button" onClick={() => scrollToSection("products")} className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-[color:var(--brand-dark)] transition hover:bg-slate-50">
                     Explore Products
                   </RippleButton>
                 </div>
@@ -414,16 +642,16 @@ export default function HomePage() {
             <div className="liquid-border glow-border mt-8 rounded-3xl p-6 sm:p-8">
               <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
                 <article className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl">
-                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
+                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-[color:var(--brand-primary)] to-[color:var(--brand-dark)]" />
                   <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                       {currentProduct.badge}
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                       {currentProduct.subtitle}
                     </span>
                   </div>
-                  <div className="h-44 rounded-xl bg-gradient-to-br from-orange-100 via-amber-50 to-slate-100" aria-hidden="true" />
+                  <div className="h-44 rounded-xl bg-gradient-to-br from-blue-50 via-white to-emerald-50" aria-hidden="true" />
                   <h3 className="mt-5 text-2xl font-bold">{currentProduct.name}</h3>
                   <p className="mt-3 text-sm leading-7 text-gray-600">{currentProduct.description}</p>
                   <ul className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -433,7 +661,7 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <RippleButton href="#contact" className="mt-5 inline-flex rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 text-sm font-semibold text-white">
+                  <RippleButton as="button" type="button" onClick={() => scrollToSection("contact")} className="mt-5 inline-flex rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 text-sm font-semibold text-white">
                     Get Access
                   </RippleButton>
                 </article>
@@ -446,8 +674,8 @@ export default function HomePage() {
                       onClick={() => setProductIndex(index)}
                       className={`block w-full rounded-xl border px-4 py-3 text-left transition ${
                         productIndex === index
-                          ? "border-orange-300 bg-orange-50 text-orange-800 shadow-md"
-                          : "border-gray-100 bg-white text-gray-600 hover:border-orange-300/70"
+                          ? "border-blue-300 bg-blue-50 text-blue-800 shadow-md"
+                          : "border-gray-100 bg-white text-gray-600 hover:border-blue-300/70"
                       }`}
                       aria-label={`View ${product.name}`}
                     >
@@ -459,7 +687,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setProductIndex((prev) => (prev === 0 ? products.length - 1 : prev - 1))}
-                      className="mr-2 rounded-full border border-orange-200 px-3 py-1 text-xs text-slate-700"
+                      className="mr-2 rounded-full border border-blue-200 px-3 py-1 text-xs text-slate-700"
                       aria-label="Previous product"
                     >
                       Prev
@@ -467,7 +695,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setProductIndex((prev) => (prev + 1) % products.length)}
-                      className="rounded-full border border-orange-200 px-3 py-1 text-xs text-slate-700"
+                      className="rounded-full border border-blue-200 px-3 py-1 text-xs text-slate-700"
                       aria-label="Next product"
                     >
                       Next
@@ -481,7 +709,7 @@ export default function HomePage() {
                         onClick={() => setProductIndex(index)}
                         aria-label={`Go to ${product.name}`}
                         className={`h-2.5 rounded-full transition ${
-                          productIndex === index ? "w-8 bg-orange-600" : "w-2.5 bg-gray-300"
+                          productIndex === index ? "w-8 bg-blue-600" : "w-2.5 bg-gray-300"
                         }`}
                       />
                     ))}
@@ -507,7 +735,7 @@ export default function HomePage() {
                 <li>- SLA-backed implementation and continuous optimization cycles</li>
               </ul>
             </article>
-            <article className="reveal-item rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-8">
+            <article className="reveal-item rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-emerald-50 p-8">
               <h3 className="text-2xl font-semibold">Story-Led Delivery</h3>
               <p className="mt-3 text-gray-600">
                 From strategy workshops to production rollouts, every phase maps directly to executive outcomes and measurable value realization.
@@ -528,7 +756,7 @@ export default function HomePage() {
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {services.map((service) => (
                 <article key={service.title} className="service-tilt reveal-item rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl">
-                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
+                  <div className="mb-5 h-1 w-20 rounded-full bg-gradient-to-r from-[color:var(--brand-primary)] to-[color:var(--brand-dark)]" />
                   <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-700 font-bold text-white shadow-md">
                     {service.title.slice(0, 2).toUpperCase()}
                   </div>
@@ -541,7 +769,7 @@ export default function HomePage() {
         </section>
 
         <section id="pricing" className="section-pad relative overflow-hidden">
-          <div className="blob left-[-5%] top-16 h-44 w-44 bg-orange-200/60" />
+          <div className="blob left-[-5%] top-16 h-44 w-44 bg-blue-200/60" />
           <div className="container-wide relative z-10">
             <div className="reveal-item flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-3xl font-bold sm:text-4xl">Pricing Plans</h2>
@@ -549,14 +777,14 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setPricingMode("monthly")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "monthly" ? "bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-md" : "text-gray-700"}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "monthly" ? "bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] text-white shadow-md" : "text-gray-700"}`}
                 >
                   Monthly
                 </button>
                 <button
                   type="button"
                   onClick={() => setPricingMode("yearly")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "yearly" ? "bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-md" : "text-gray-700"}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${pricingMode === "yearly" ? "bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] text-white shadow-md" : "text-gray-700"}`}
                 >
                   Yearly
                 </button>
@@ -568,10 +796,10 @@ export default function HomePage() {
                 <article
                   key={plan.name}
                   className={`reveal-item rounded-2xl border bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl ${
-                    plan.featured ? "ring-2 ring-orange-400 border-orange-200" : "border-gray-100"
+                    plan.featured ? "ring-2 ring-blue-500 border-blue-200" : "border-gray-100"
                   }`}
                 >
-                  <div className="mb-5 h-1 w-24 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
+                  <div className="mb-5 h-1 w-24 rounded-full bg-gradient-to-r from-[color:var(--brand-primary)] to-[color:var(--brand-dark)]" />
                   <h3 className="text-2xl font-semibold">{plan.name}</h3>
                   <p className="mt-3 text-3xl font-black text-slate-900">
                     {plan.amount ? `$${plan.amount}` : "Custom"}
@@ -582,7 +810,7 @@ export default function HomePage() {
                     <li>- Security-first delivery</li>
                     <li>- SLA-backed support</li>
                   </ul>
-                  <RippleButton href="#contact" className="mt-6 inline-flex w-full justify-center rounded-lg bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2 text-sm font-semibold text-white">
+                  <RippleButton as="button" type="button" onClick={() => scrollToSection("contact")} className="mt-6 inline-flex w-full justify-center rounded-lg bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-4 py-2 text-sm font-semibold text-white">
                     Choose Plan
                   </RippleButton>
                 </article>
@@ -597,7 +825,7 @@ export default function HomePage() {
             <div className="marquee reveal-item mt-8 overflow-hidden rounded-2xl border border-gray-100 bg-transparent p-4">
               <div className="marquee-track gap-4">
                 {clientLogos.map((client, index) => (
-                  <div key={`${client.id}-${index}`} className="flex min-w-[180px] items-center justify-center rounded-xl border border-gray-100 bg-white px-4 py-5 text-sm font-semibold text-gray-500 grayscale transition hover:grayscale-0 hover:text-orange-600">
+                  <div key={`${client.id}-${index}`} className="flex min-w-[180px] items-center justify-center rounded-xl border border-gray-100 bg-white px-4 py-5 text-sm font-semibold text-gray-500 grayscale transition hover:grayscale-0 hover:text-blue-600">
                     {client.logoUrl ? (
                       <img src={client.logoUrl} alt={client.name} className="h-8 w-auto object-contain" loading="lazy" />
                     ) : (
@@ -610,56 +838,108 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="testimonials" className="relative bg-gray-50 py-24">
-          <div className="container-wide mx-auto max-w-5xl px-6">
-            <div className="relative text-center">
-              <h2 className="mt-2 text-3xl font-bold text-gray-900 md:text-4xl">Testimonials</h2>
-              <p className="mt-3 text-sm uppercase tracking-wide text-gray-500">
-                Our Happy Clients Says
-              </p>
-
-              <div className="relative z-10 mx-auto mt-10 max-w-3xl rounded-3xl border border-gray-100 bg-white p-8 shadow-xl md:p-10">
-                <div className="flex justify-center gap-1 text-amber-400" aria-label={`Rating ${activeTestimonial.rating || 5} out of 5`}>
-                  {Array.from({ length: activeTestimonial.rating || 5 }).map((_, idx) => (
-                    <svg key={`active-star-${idx}`} viewBox="0 0 20 20" className="h-5 w-5" fill="currentColor" aria-hidden="true">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.03 3.167a1 1 0 00.95.69h3.328c.969 0 1.371 1.24.588 1.81l-2.693 1.955a1 1 0 00-.364 1.118l1.03 3.167c.3.921-.755 1.688-1.54 1.118L10 13.347l-2.693 1.955c-.784.57-1.838-.197-1.539-1.118l1.03-3.167a1 1 0 00-.364-1.118L3.74 8.594c-.783-.57-.38-1.81.588-1.81h3.329a1 1 0 00.95-.69l1.03-3.167z" />
-                    </svg>
-                  ))}
-                </div>
-
-                <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-gray-700 md:text-xl">
-                  <span className="text-3xl text-orange-300">"</span>
-                  {activeTestimonial.feedback}
-                  <span className="text-3xl text-orange-300">"</span>
+        <section id="testimonials" className="relative bg-slate-50 py-24">
+          <div className="container-wide">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <span className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--brand-primary)] shadow-sm">
+                  Testimonials
+                </span>
+                <h2 className="mt-5 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                  What Our Clients Say About Us
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+                  Trusted by teams that need reliable automation, delivery transparency, and measurable outcomes.
                 </p>
-
-                <div className="mt-8 flex items-center justify-center gap-3">
-                  <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(activeTestimonial.name)}&background=e0f2fe&color=0f172a`}
-                    alt={`${activeTestimonial.name} avatar`}
-                    className="h-12 w-12 rounded-full border-2 border-white shadow-sm"
-                    loading="lazy"
-                  />
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-900">{activeTestimonial.name}</p>
-                    <p className="text-sm text-gray-500">{activeTestimonial.company}</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-center gap-2">
-                  {content.testimonials.map((item, idx) => (
-                    <button
-                      key={`${item.id}-t-dot`}
-                      type="button"
-                      onClick={() => setTestimonialIndex(idx)}
-                      aria-label={`Go to testimonial ${idx + 1}`}
-                      className={`h-2.5 rounded-full transition ${
-                        idx === testimonialIndex ? "w-8 bg-orange-600" : "w-2.5 bg-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
               </div>
+
+              <div className="flex items-center gap-2 lg:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setTestimonialIndex((prev) => prev - 1)}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50"
+                  aria-label="Previous testimonials"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTestimonialIndex((prev) => prev + 1)}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50"
+                  aria-label="Next testimonials"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-6 lg:grid-cols-3">
+              {[getTestimonial(0), getTestimonial(1), getTestimonial(2)].map((item, index) => {
+                const hiddenClass = index === 1 ? "hidden sm:block" : index === 2 ? "hidden lg:block" : "";
+                const rating = Math.max(1, Math.min(5, Number(item?.rating) || 5));
+                const isExpanded = expandedTestimonialId === item.id;
+
+                return (
+                  <article
+                    key={item.id}
+                    className={`${hiddenClass} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-[0_26px_46px_-32px_rgba(43,45,66,0.45)]`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=e0f2fe&color=0f172a`}
+                          alt={`${item.name} avatar`}
+                          className="h-11 w-11 rounded-xl border border-slate-200"
+                          loading="lazy"
+                        />
+                        <div>
+                          <p className="text-base font-semibold text-slate-900">{item.name}</p>
+                          <p className="text-sm text-slate-500">{item.company || "Client"}</p>
+                        </div>
+                      </div>
+                      <QuoteMark />
+                    </div>
+
+                    <div className="mt-4 flex gap-1 text-amber-400" aria-label={`Rating ${rating} out of 5`}>
+                      {Array.from({ length: rating }).map((_, idx) => (
+                        <svg key={`${item.id}-star-${idx}`} viewBox="0 0 20 20" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.03 3.167a1 1 0 00.95.69h3.328c.969 0 1.371 1.24.588 1.81l-2.693 1.955a1 1 0 00-.364 1.118l1.03 3.167c.3.921-.755 1.688-1.54 1.118L10 13.347l-2.693 1.955c-.784.57-1.838-.197-1.539-1.118l1.03-3.167a1 1 0 00-.364-1.118L3.74 8.594c-.783-.57-.38-1.81.588-1.81h3.329a1 1 0 00.95-.69l1.03-3.167z" />
+                        </svg>
+                      ))}
+                    </div>
+
+                    <p className={`mt-4 text-sm leading-7 text-slate-600 ${isExpanded ? "" : "line-clamp-4"}`}>
+                      {item.feedback}
+                    </p>
+
+                    {String(item.feedback || "").length > 160 ? (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTestimonialId((prev) => (prev === item.id ? null : item.id))}
+                        className="mt-3 inline-flex text-sm font-semibold text-[color:var(--brand-primary)] hover:underline"
+                      >
+                        {isExpanded ? "Read Less" : "Read More"}
+                      </button>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-2">
+              {Array.from({ length: Math.min(testimonialCount, 8) }).map((_, idx) => (
+                <button
+                  key={`t-dot-${idx}`}
+                  type="button"
+                  onClick={() => setTestimonialIndex(idx)}
+                  aria-label={`Go to testimonial ${idx + 1}`}
+                  className={`h-2.5 rounded-full transition ${idx === safeIndex ? "w-8 bg-blue-600" : "w-2.5 bg-gray-300"}`}
+                />
+              ))}
             </div>
           </div>
         </section>
@@ -670,15 +950,19 @@ export default function HomePage() {
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {newsroomItems.map((item) => (
                 <article key={item.title} className="reveal-item overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-[0_24px_42px_-30px_rgba(245,158,11,0.5)]">
-                  <div className="h-36 overflow-hidden rounded-xl bg-orange-50">
-                    <div className="h-full w-full bg-gradient-to-br from-orange-200/50 to-amber-200/50 transition duration-300 hover:scale-110" />
+                  <div className="h-36 overflow-hidden rounded-xl bg-blue-50">
+                    <div className="h-full w-full bg-gradient-to-br from-blue-200/50 to-emerald-200/50 transition duration-300 hover:scale-110" />
                   </div>
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-orange-700">{item.date}</p>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-orange-600">{item.date}</p>
                   <h3 className="mt-2 text-lg font-semibold">{item.title}</h3>
                   <p className="mt-2 text-sm text-gray-600">{item.summary}</p>
-                  <a href="#newsroom" className="mt-4 inline-flex text-sm font-semibold text-slate-900 hover:text-orange-700">
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection("newsroom")}
+                    className="mt-4 inline-flex text-sm font-semibold text-slate-900 hover:text-blue-700"
+                  >
                     Read More
-                  </a>
+                  </button>
                 </article>
               ))}
             </div>
@@ -687,119 +971,29 @@ export default function HomePage() {
 
         <section id="careers" className="section-pad">
           <div className="container-wide">
-            <div className="reveal-item rounded-3xl border border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-white p-8 text-center backdrop-blur-sm sm:p-10">
+            <div className="reveal-item rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-emerald-50 p-8 text-center backdrop-blur-sm sm:p-10">
               <h2 className="text-3xl font-bold sm:text-4xl">Join Our Growing Team</h2>
               <p className="mx-auto mt-3 max-w-3xl text-gray-700">
                 Build meaningful enterprise products and consulting solutions with a team that values quality, speed, and innovation.
               </p>
-              <RippleButton href="/careers" className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-3 text-sm font-bold text-white">
+              <RippleButton href="/careers" className="mt-6 inline-flex rounded-xl bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-6 py-3 text-sm font-bold text-white">
                 Explore Careers
               </RippleButton>
             </div>
           </div>
         </section>
-
-        <section id="contact" className="section-pad pb-24">
-          <div className="container-wide grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <article className="reveal-item">
-              <h2 className="text-3xl font-bold sm:text-4xl">Lead Generation Form</h2>
-              <p className="mt-4 text-gray-600">
-                Share your requirements and get a tailored strategy consultation from our team.
-              </p>
-              <p className="mt-2 text-sm text-slate-700">Contact email: {contactEmail}</p>
-              <p className="mt-5 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-slate-700">
-                Spam prevention: We never ask for OTPs, passwords, or payment data in this form.
-              </p>
-            </article>
-
-            <form onSubmit={submitForm} noValidate className="glass reveal-item rounded-3xl p-6 sm:p-8">
-              <div className="hidden" aria-hidden="true">
-                <label htmlFor="website">Website</label>
-                <input
-                  id="website"
-                  name="website"
-                  tabIndex="-1"
-                  autoComplete="off"
-                  value={formData.website}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, website: event.target.value }))}
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FloatInput
-                  id="name"
-                  label="Name"
-                  value={formData.name}
-                  error={formErrors.name}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, name: value }))}
-                />
-                <FloatInput
-                  id="company"
-                  label="Company Name"
-                  value={formData.company}
-                  error={formErrors.company}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, company: value }))}
-                />
-                <FloatInput
-                  id="email"
-                  label="Email"
-                  type="email"
-                  value={formData.email}
-                  error={formErrors.email}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, email: value }))}
-                />
-                <FloatInput
-                  id="phone"
-                  label="Phone"
-                  type="tel"
-                  value={formData.phone}
-                  error={formErrors.phone}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, phone: value }))}
-                />
-              </div>
-
-              <div className="mt-4">
-                <label htmlFor="message" className="relative block">
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, message: event.target.value }))}
-                    placeholder="Message"
-                    className={`form-field peer min-h-[130px] ${formErrors.message ? "border-red-500 focus:border-red-500" : ""}`}
-                    required
-                  />
-                  <span className="floating-label pointer-events-none absolute left-4 top-3 text-sm text-gray-500 transition">
-                    Message
-                  </span>
-                </label>
-                {formErrors.message ? <p className="mt-1 text-xs text-rose-600">{formErrors.message}</p> : null}
-              </div>
-
-              <RippleButton
-                as="button"
-                type="submit"
-                className={`mt-6 rounded-xl px-6 py-3 text-sm font-bold ${
-                  submitLoading ? "bg-slate-400 text-slate-700" : "bg-gradient-to-r from-slate-900 to-slate-700 text-white"
-                }`}
-                disabled={submitLoading}
-              >
-                {submitLoading ? "Submitting..." : "Submit Inquiry"}
-              </RippleButton>
-
-              {formSuccess ? (
-                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">
-                  <span aria-hidden="true">OK</span>
-                  Message sent successfully. Team BSS will contact you soon.
-                </p>
-              ) : null}
-              {formMessage && !formSuccess ? (
-                <p className="mt-3 text-sm text-amber-700">{formMessage}</p>
-              ) : null}
-            </form>
-          </div>
-        </section>
       </main>
+
+      <button
+        type="button"
+        onClick={openDemo}
+        className="demo-tab"
+        aria-label="Book a demo"
+      >
+        Book A Demo
+      </button>
+
+      <div id="contact" className="sr-only" aria-hidden="true" />
 
       <footer className="border-t border-slate-800 bg-slate-950 py-10 text-sm text-slate-300">
         <div className="container-wide grid gap-8 md:grid-cols-4">
@@ -812,9 +1006,21 @@ export default function HomePage() {
           <div>
             <h3 className="text-sm font-semibold text-white">Sitemap</h3>
             <ul className="mt-2 space-y-1 text-xs">
-              <li><a href="#about">About</a></li>
-              <li><a href="#products">Products</a></li>
-              <li><a href="#services">Services</a></li>
+              <li>
+                <button type="button" onClick={() => scrollToSection("about")} className="hover:text-white">
+                  About
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => scrollToSection("products")} className="hover:text-white">
+                  Products
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => scrollToSection("services")} className="hover:text-white">
+                  Services
+                </button>
+              </li>
               <li><a href="/sitemap.xml">XML Sitemap</a></li>
             </ul>
           </div>
@@ -857,7 +1063,7 @@ export default function HomePage() {
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-42 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-lg transition hover:-translate-y-0.5"
+          className="fixed bottom-6 right-20 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-lg transition hover:-translate-y-0.5"
           aria-label="Scroll to top"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -873,7 +1079,78 @@ export default function HomePage() {
   );
 }
 
-function RippleButton({ as = "a", href, type = "button", className, children, disabled = false }) {
+function SocialLink({ href, label, children }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+    >
+      {children}
+    </a>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5ZM.5 24h4V7.98h-4V24ZM8.5 7.98h3.83v2.19h.05c.53-1 1.83-2.19 3.77-2.19 4.03 0 4.78 2.65 4.78 6.09V24h-4v-8.64c0-2.06-.04-4.71-2.87-4.71-2.87 0-3.31 2.24-3.31 4.56V24h-4V7.98Z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.41 0 12.07C0 18.09 4.39 23.08 10.12 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.79-4.69 4.54-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.88v2.26h3.32l-.53 3.49h-2.79V24C19.61 23.08 24 18.09 24 12.07Z" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.6l-5.16-6.4L5.9 22H2.8l7.25-8.29L.8 2h6.76l4.66 5.78L18.9 2Zm-1.16 18h1.72L6.73 3.9H4.9l12.84 16.1Z" />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M7 2C4.24 2 2 4.24 2 7v10c0 2.76 2.24 5 5 5h10c2.76 0 5-2.24 5-5V7c0-2.76-2.24-5-5-5H7Zm10 2c1.65 0 3 1.35 3 3v10c0 1.65-1.35 3-3 3H7c-1.65 0-3-1.35-3-3V7c0-1.65 1.35-3 3-3h10Zm-5 3.5A4.5 4.5 0 1 0 16.5 12 4.5 4.5 0 0 0 12 7.5Zm0 7.3A2.8 2.8 0 1 1 14.8 12 2.8 2.8 0 0 1 12 14.8ZM17.7 6.1a1.05 1.05 0 1 0 1.05 1.05A1.05 1.05 0 0 0 17.7 6.1Z" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M20.5 3.5A11 11 0 0 0 2.3 16.6L1 23l6.6-1.3A11 11 0 1 0 20.5 3.5Zm-8.6 18a9 9 0 0 1-4.6-1.2l-.3-.2-3.9.8.8-3.8-.2-.3A9 9 0 1 1 11.9 21.5Zm5.3-6.4c-.3-.1-1.9-.9-2.2-1-.3-.1-.5-.1-.7.1-.2.3-.9 1-1.1 1.2-.2.2-.4.2-.7.1-1.8-.9-2.9-1.6-4-3.4-.3-.5.3-.5.9-1.7.1-.2.1-.5 0-.7-.1-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-1 .4-.4.4-1.3 1.2-1.3 2.9 0 1.7 1.3 3.3 1.5 3.6.2.3 2.4 3.8 6 5.3.9.4 1.5.6 2 .7.9.2 1.6.1 2.3.1.7-.1 2-.9 2.3-1.8.3-.9.3-1.7.2-1.8-.1-.1-.3-.2-.7-.3Z" />
+    </svg>
+  );
+}
+
+function QuoteMark() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-10 w-10 text-[color:var(--brand-primary)]/20" fill="currentColor" aria-hidden="true">
+      <path d="M18 28c0-8 5-14 13-16v8c-3 1-5 4-5 8h5v16H18V28zm18 0c0-8 5-14 13-16v8c-3 1-5 4-5 8h5v16H36V28z" />
+    </svg>
+  );
+}
+
+function RippleButton({
+  as = "a",
+  href,
+  type = "button",
+  onClick,
+  className,
+  children,
+  disabled = false,
+}) {
   const [ripples, setRipples] = useState([]);
   const Element = as;
 
@@ -886,6 +1163,7 @@ function RippleButton({ as = "a", href, type = "button", className, children, di
 
     setRipples((prev) => [...prev, { x, y, key }]);
     setTimeout(() => setRipples((prev) => prev.filter((ripple) => ripple.key !== key)), 650);
+    onClick?.(event);
   };
 
   const props = {
@@ -924,7 +1202,7 @@ const StatCard = memo(function StatCard({ label, value, suffix }) {
 const IconGlass = memo(function IconGlass({ title, icon }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 transition hover:scale-[1.03]">
-      <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-sm font-bold text-white">
+      <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-dark))] text-sm font-bold text-white">
         {icon}
       </div>
       <p className="text-sm font-semibold">{title}</p>
@@ -932,14 +1210,24 @@ const IconGlass = memo(function IconGlass({ title, icon }) {
   );
 });
 
-const FloatInput = memo(function FloatInput({ id, label, value, onChange, error, type = "text" }) {
+const FloatInput = memo(function FloatInput({
+  id,
+  name = id,
+  label,
+  value,
+  onChange,
+  error,
+  type = "text",
+  inputRef,
+}) {
   return (
     <div>
       <label htmlFor={id} className="relative block">
         <input
           id={id}
-          name={id}
+          name={name}
           type={type}
+          ref={inputRef}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={label}
@@ -954,6 +1242,117 @@ const FloatInput = memo(function FloatInput({ id, label, value, onChange, error,
     </div>
   );
 });
+
+function LeadForm({
+  idPrefix,
+  className = "",
+  firstFieldRef,
+  formData,
+  formErrors,
+  setFormData,
+  submitForm,
+  submitLoading,
+  formSuccess,
+  formMessage,
+}) {
+  const websiteId = `${idPrefix}-website`;
+  const nameId = `${idPrefix}-name`;
+  const companyId = `${idPrefix}-company`;
+  const emailId = `${idPrefix}-email`;
+  const phoneId = `${idPrefix}-phone`;
+  const messageId = `${idPrefix}-message`;
+
+  return (
+    <form onSubmit={submitForm} noValidate className={className}>
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor={websiteId}>Website</label>
+        <input
+          id={websiteId}
+          name="website"
+          tabIndex="-1"
+          autoComplete="off"
+          value={formData.website}
+          onChange={(event) => setFormData((prev) => ({ ...prev, website: event.target.value }))}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FloatInput
+          id={nameId}
+          name="name"
+          label="Name"
+          value={formData.name}
+          error={formErrors.name}
+          inputRef={firstFieldRef}
+          onChange={(value) => setFormData((prev) => ({ ...prev, name: value }))}
+        />
+        <FloatInput
+          id={companyId}
+          name="company"
+          label="Company Name"
+          value={formData.company}
+          error={formErrors.company}
+          onChange={(value) => setFormData((prev) => ({ ...prev, company: value }))}
+        />
+        <FloatInput
+          id={emailId}
+          name="email"
+          label="Email"
+          type="email"
+          value={formData.email}
+          error={formErrors.email}
+          onChange={(value) => setFormData((prev) => ({ ...prev, email: value }))}
+        />
+        <FloatInput
+          id={phoneId}
+          name="phone"
+          label="Phone"
+          type="tel"
+          value={formData.phone}
+          error={formErrors.phone}
+          onChange={(value) => setFormData((prev) => ({ ...prev, phone: value }))}
+        />
+      </div>
+
+      <div className="mt-4">
+        <label htmlFor={messageId} className="relative block">
+          <textarea
+            id={messageId}
+            name="message"
+            value={formData.message}
+            onChange={(event) => setFormData((prev) => ({ ...prev, message: event.target.value }))}
+            placeholder="Message"
+            className={`form-field peer min-h-[130px] ${formErrors.message ? "border-red-500 focus:border-red-500" : ""}`}
+            required
+          />
+          <span className="floating-label pointer-events-none absolute left-4 top-3 text-sm text-gray-500 transition">
+            Message
+          </span>
+        </label>
+        {formErrors.message ? <p className="mt-1 text-xs text-rose-600">{formErrors.message}</p> : null}
+      </div>
+
+      <RippleButton
+        as="button"
+        type="submit"
+        className={`mt-6 rounded-xl px-6 py-3 text-sm font-bold ${
+          submitLoading ? "bg-slate-400 text-slate-700" : "bg-gradient-to-r from-slate-900 to-slate-700 text-white"
+        }`}
+        disabled={submitLoading}
+      >
+        {submitLoading ? "Submitting..." : "Schedule A Free Demo"}
+      </RippleButton>
+
+      {formSuccess ? (
+        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">
+          <span aria-hidden="true">OK</span>
+          Message sent successfully. Team BSS will contact you soon.
+        </p>
+      ) : null}
+      {formMessage && !formSuccess ? <p className="mt-3 text-sm text-amber-700">{formMessage}</p> : null}
+    </form>
+  );
+}
 
 function WaveDivider({ className, flip = false }) {
   return (

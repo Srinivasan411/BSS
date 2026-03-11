@@ -6,7 +6,7 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 
 function App() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 text-slate-100">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[color:var(--brand-dark)] text-white">Loading...</div>}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/admin" element={<AdminPage />} />

@@ -76,7 +76,7 @@ export default function SimpleChatbot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end">
       <div
         className={`mb-3 w-[min(20rem,90vw)] rounded-2xl border border-gray-200 bg-white shadow-xl transition-all duration-300 ${
           open
