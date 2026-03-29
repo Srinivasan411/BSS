@@ -136,7 +136,7 @@ export default function HomePage() {
   const [statsVisible, setStatsVisible] = useState(false);
   const [parallaxY, setParallaxY] = useState(0);
   const [pricingMode, setPricingMode] = useState("monthly");
-  const [content, setContent] = useState({ settings: {}, clients: [], testimonials: [] });
+  const [content, setContent] = useState({ settings: {}, clients: [], testimonials: [], contactDetails: null });
   const [productIndex, setProductIndex] = useState(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const [expandedTestimonialId, setExpandedTestimonialId] = useState(null);
@@ -154,7 +154,7 @@ export default function HomePage() {
   useEffect(() => {
     getContent()
       .then((payload) => setContent(payload))
-      .catch(() => setContent({ settings: {}, clients: [], testimonials: [] }));
+      .catch(() => setContent({ settings: {}, clients: [], testimonials: [], contactDetails: null }));
   }, []);
 
   useEffect(() => {
@@ -221,15 +221,27 @@ export default function HomePage() {
   const c3 = useCountUp(12, statsVisible);
 
   const settings = content.settings || {};
+  const contactDetails = content.contactDetails || {};
   const companyName = settings.companyName || "Brilliant Systems Solutions (BSS)";
   const heroHeading = settings.heroHeading || "Empowering Businesses with Smart IT & AI Solutions";
   const heroSubheading =
     settings.heroSubheading ||
     "A product and services company helping enterprises modernize technology with secure IT systems, AI automation, and strategic consulting.";
-  const whatsappNumber = settings.whatsappNumber || "919000000000";
-  const contactEmail = settings.contactEmail || "hello@bss-example.com";
+  const whatsappNumber = contactDetails.whatsappNumber || settings.whatsappNumber || "919000000000";
+  const contactEmail = contactDetails.email || settings.contactEmail || "hello@bss-example.com";
   const canonicalUrl = "https://www.brilliantsystemssolutions.com/";
   const ogImage = `${canonicalUrl}og-image.jpg`;
+  const contactAddress = [
+    contactDetails.addressLine1,
+    contactDetails.addressLine2,
+    contactDetails.city,
+    contactDetails.state,
+    contactDetails.postalCode,
+    contactDetails.country,
+  ]
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean)
+    .join(", ");
 
   const scrollToSection = useCallback((id) => {
     const target = document.getElementById(id);
@@ -557,41 +569,128 @@ export default function HomePage() {
       ) : null}
 
       <main className="mesh-bg relative overflow-hidden bg-white text-gray-700 [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900">
-        <section id="home" className="relative overflow-hidden pt-44 sm:pt-48">
-          <div className="blob -left-20 top-20 h-56 w-56 bg-blue-300/70" style={{ transform: `translateY(${parallaxY * 0.4}px)` }} />
-          <div className="blob right-8 top-10 h-40 w-40 bg-slate-300/60" style={{ transform: `translateY(${-parallaxY * 0.25}px)` }} />
-          <div className="blob bottom-8 right-[-5%] h-64 w-64 bg-blue-300/60" style={{ transform: `translateY(${parallaxY * 0.3}px)` }} />
+        <section id="home" className="relative overflow-hidden pt-40 sm:pt-44">
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div
+              className="absolute -left-32 top-16 h-72 w-72 rounded-full bg-blue-300/35 blur-3xl"
+              style={{ transform: `translateY(${parallaxY * 0.35}px)` }}
+            />
+            <div
+              className="absolute -right-40 top-10 h-80 w-80 rounded-full bg-slate-300/30 blur-3xl"
+              style={{ transform: `translateY(${-parallaxY * 0.25}px)` }}
+            />
+            <div
+              className="absolute bottom-10 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-200/25 blur-3xl"
+              style={{ transform: `translateY(${parallaxY * 0.2}px)` }}
+            />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(37,99,235,0.10),transparent_45%),radial-gradient(circle_at_70%_30%,rgba(15,23,42,0.07),transparent_55%)]" />
+          </div>
 
           <div className="container-wide section-pad relative z-10">
-            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+            <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
               <div className="reveal-item">
-                <p className="mb-5 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                  Premium Enterprise Technology
-                </p>
-                <h1 className="max-w-4xl text-4xl font-black leading-[1.15] text-gray-900 sm:text-5xl lg:text-6xl">
-                  {heroHeading}
+                <div className="mb-6 inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[color:var(--brand-dark)]">
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--brand-primary)]" aria-hidden="true" />
+                    Enterprise Delivery
+                  </span>
+                  <span className="text-slate-500">Salesforce</span>
+                  <span className="text-slate-400" aria-hidden="true">•</span>
+                  <span className="text-slate-500">AI Automation</span>
+                  <span className="text-slate-400" aria-hidden="true">•</span>
+                  <span className="text-slate-500">App Development</span>
+                </div>
+
+                <h1 className="max-w-4xl text-4xl font-black leading-[1.1] text-gray-900 sm:text-5xl lg:text-6xl">
+                  <span className="bg-gradient-to-r from-[color:var(--brand-dark)] via-slate-900 to-[color:var(--brand-primary)] bg-clip-text text-transparent">
+                    {heroHeading}
+                  </span>
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-8 text-gray-600 sm:text-lg">{heroSubheading}</p>
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <RippleButton as="button" type="button" onClick={openDemo} className="rounded-xl bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl">
-                    Get Free Consultation
+
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <RippleButton
+                    as="button"
+                    type="button"
+                    onClick={openDemo}
+                    className="rounded-xl bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-dark))] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl"
+                  >
+                    Book a Free Consultation
                   </RippleButton>
-                  <RippleButton as="button" type="button" onClick={() => scrollToSection("products")} className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-[color:var(--brand-dark)] transition hover:bg-slate-50">
-                    Explore Products
+                  <RippleButton
+                    as="button"
+                    type="button"
+                    onClick={() => scrollToSection("services")}
+                    className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-[color:var(--brand-dark)] transition hover:bg-slate-50"
+                  >
+                    View Services
                   </RippleButton>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection("contact")}
+                    className="text-sm font-semibold text-slate-700 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-900"
+                  >
+                    Talk to Sales
+                  </button>
+                </div>
+
+                <div className="mt-8 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                    Fast kickoff & clear milestones
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden="true" />
+                    Security-first architecture
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-violet-500" aria-hidden="true" />
+                    Automation-driven outcomes
+                  </span>
                 </div>
               </div>
 
-              <aside className="glass glow-border reveal-item rounded-3xl p-6 shadow-xl transition duration-300 hover:-translate-y-1 sm:p-8">
-                <h2 className="text-xl font-bold text-gray-900">Transformation Snapshot</h2>
-                <p className="mt-2 text-sm text-gray-600">
-                  Secure IT, AI automation, and people operations consulting delivered as one integrated engagement model.
-                </p>
-                <ul className="mt-5 space-y-4 text-sm text-slate-700">
-                  <li>- Enterprise-first architecture and governance</li>
-                  <li>- Productized accelerators for faster go-live</li>
-                  <li>- Continuous optimization and strategic advisory</li>
-                </ul>
+              <aside className="reveal-item relative">
+                <div className="glow-border rounded-3xl border border-slate-200/70 bg-white/80 p-6 shadow-xl backdrop-blur sm:p-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--brand-primary)]">
+                      Delivery model
+                    </p>
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                      Transparent, measurable, reliable
+                    </span>
+                  </div>
+
+                  <h2 className="mt-4 text-xl font-bold text-slate-900 sm:text-2xl">
+                    Build, integrate, and automate - end to end.
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    From discovery to go-live, BSS delivers secure systems and automation playbooks that reduce manual work and improve operational clarity.
+                  </p>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold text-slate-500">Phase 1</p>
+                      <p className="mt-1 font-semibold text-slate-900">Strategy & Architecture</p>
+                      <p className="mt-2 text-xs leading-6 text-slate-600">Security baseline, system design, and delivery plan.</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold text-slate-500">Phase 2</p>
+                      <p className="mt-1 font-semibold text-slate-900">Execution & Integration</p>
+                      <p className="mt-2 text-xs leading-6 text-slate-600">Apps, automation, and data flows with QA gates.</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:col-span-2">
+                      <p className="text-xs font-semibold text-slate-500">Phase 3</p>
+                      <p className="mt-1 font-semibold text-slate-900">Optimization & Support</p>
+                      <p className="mt-2 text-xs leading-6 text-slate-600">Continuous improvements, monitoring, and advisory support.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="pointer-events-none absolute -bottom-8 -right-10 h-40 w-40 rounded-full bg-[color:var(--brand-primary)]/15 blur-3xl"
+                  aria-hidden="true"
+                />
               </aside>
             </div>
 
@@ -1028,7 +1127,9 @@ export default function HomePage() {
             <h3 className="text-sm font-semibold text-white">Contact</h3>
             <ul className="mt-2 space-y-1 text-xs">
               <li>Email: {contactEmail}</li>
+              {contactDetails.phonePrimary ? <li>Phone: {contactDetails.phonePrimary}</li> : null}
               <li>WhatsApp: +{whatsappNumber}</li>
+              {contactAddress ? <li>Address: {contactAddress}</li> : null}
               <li><a href="/privacy-policy">Privacy Policy</a></li>
               <li><a href="/terms-and-conditions">Terms & Conditions</a></li>
             </ul>
@@ -1370,5 +1471,3 @@ function WaveDivider({ className, flip = false }) {
     </div>
   );
 }
-
-

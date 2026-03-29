@@ -36,7 +36,7 @@ async function request(path, options = {}) {
   try {
     res = await fetch(buildUrl(path), { ...options, headers: mergedHeaders });
   } catch {
-    throw new Error("Cannot reach API server. Start backend with `npm run server`.");
+    throw new Error("Cannot reach API server. Start backend with `node server/index.js` (or `npm.cmd run server`).");
   }
 
   if (!res.ok) {
@@ -52,8 +52,11 @@ async function request(path, options = {}) {
     if (res.status === 401) {
       clearAdminToken();
     }
+    const serverMessage = payload?.error
+      ? `${payload.error}${payload?.details ? ` (${payload.details})` : ""}`
+      : "";
     throw new Error(
-      payload?.error ||
+      serverMessage ||
         (res.status === 404 ? "API route not found. Ensure backend is running and updated." : "") ||
         (res.status >= 500 ? `Backend error (${res.status}). Check backend terminal logs.` : "") ||
         raw ||
@@ -122,5 +125,29 @@ export function createTestimonial(payload) {
 export function deleteTestimonial(id) {
   return request(`/api/testimonials/${id}`, {
     method: "DELETE",
+  });
+}
+
+export function getContactDetails() {
+  return request("/api/contact-details");
+}
+
+export function updateContactDetails(contactDetails) {
+  return request("/api/contact-details", {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ contactDetails }),
+  });
+}
+
+export function getSmtpSettings() {
+  return request("/api/smtp-settings");
+}
+
+export function updateSmtpSettings(smtpSettings) {
+  return request("/api/smtp-settings", {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ smtpSettings }),
   });
 }

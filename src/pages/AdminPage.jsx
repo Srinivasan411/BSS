@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   clearAdminToken,
@@ -8,59 +8,140 @@ import {
   deleteTestimonial,
   getAdminToken,
   getContent,
+  getSmtpSettings,
   loginAdmin,
   logoutAdmin,
+  updateContactDetails,
   updateSettings,
+  updateSmtpSettings,
 } from "../api";
 
 const initialClient = { name: "", logoUrl: "" };
 const initialTestimonial = { name: "", company: "", feedback: "", rating: 5 };
+const initialContactDetails = {
+  companyName: "",
+  email: "",
+  whatsappNumber: "",
+  phonePrimary: "",
+  phoneSecondary: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: "",
+  mapUrl: "",
+};
+const initialSmtpSettings = {
+  host: "",
+  port: 587,
+  secure: false,
+  username: "",
+  password: "",
+  fromName: "",
+  fromEmail: "",
+  hasPassword: false,
+};
 
 export default function AdminPage() {
   const [settings, setSettings] = useState({
     companyName: "",
     heroHeading: "",
     heroSubheading: "",
-    contactEmail: "",
-    whatsappNumber: "",
   });
+  const [contactDetails, setContactDetails] = useState(initialContactDetails);
+  const [smtpSettings, setSmtpSettings] = useState(initialSmtpSettings);
   const [clients, setClients] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [clientForm, setClientForm] = useState(initialClient);
   const [testimonialForm, setTestimonialForm] = useState(initialTestimonial);
   const [message, setMessage] = useState("");
+  const [apiHealth, setApiHealth] = useState({ loading: true, ok: false, message: "" });
   const [adminPassword, setAdminPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getAdminToken()));
 
-  function handleUnauthorized() {
+  const handleUnauthorized = useCallback(() => {
     clearAdminToken();
     setIsAuthenticated(false);
     setMessage("Admin session expired. Please login again.");
-  }
+  }, []);
 
-  function handleApiError(error, fallbackMessage) {
+  const handleApiError = useCallback((error, fallbackMessage) => {
     if (error?.message?.toLowerCase().includes("unauthorized")) {
       handleUnauthorized();
       return;
     }
     setMessage(error?.message || fallbackMessage);
-  }
+  }, [handleUnauthorized]);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const payload = await getContent();
-      setSettings((prev) => ({ ...prev, ...payload.settings }));
+      const incomingSettings = payload.settings || {};
+      setSettings({
+        companyName: incomingSettings.companyName || "",
+        heroHeading: incomingSettings.heroHeading || "",
+        heroSubheading: incomingSettings.heroSubheading || "",
+      });
       setClients(payload.clients || []);
       setTestimonials(payload.testimonials || []);
+      setContactDetails((prev) => ({ ...prev, ...(payload.contactDetails || {}) }));
+
+      const smtpPayload = await getSmtpSettings();
+      const incoming = smtpPayload.smtpSettings || {};
+      setSmtpSettings((prev) => ({
+        ...prev,
+        ...incoming,
+        password: "",
+      }));
     } catch (error) {
       handleApiError(error, "Failed to load admin data.");
     }
-  }
+  }, [handleApiError]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
     load();
+  }, [isAuthenticated, load]);
+
+  useEffect(() => {
+    if (isAuthenticated) return;
+    let cancelled = false;
+
+    async function checkHealth() {
+      setApiHealth({ loading: true, ok: false, message: "" });
+      try {
+        const res = await fetch("/api/health");
+        const payload = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (!res.ok) {
+          setApiHealth({
+            loading: false,
+            ok: false,
+            message: payload?.error || `API health check failed (${res.status})`,
+          });
+          return;
+        }
+        setApiHealth({
+          loading: false,
+          ok: true,
+          message: payload?.dbPath ? `Connected (${payload.dbPath})` : "Connected",
+        });
+      } catch (error) {
+        if (cancelled) return;
+        setApiHealth({
+          loading: false,
+          ok: false,
+          message: error?.message || "Cannot reach API. Start backend server.",
+        });
+      }
+    }
+
+    checkHealth();
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated]);
 
   const handleLogin = async (event) => {
@@ -70,7 +151,7 @@ export default function AdminPage() {
     setLoginLoading(true);
 
     try {
-      await loginAdmin(adminPassword);
+      await loginAdmin(adminPassword.trim());
       setIsAuthenticated(true);
       setAdminPassword("");
       setMessage("Admin login successful.");
@@ -92,9 +173,9 @@ export default function AdminPage() {
       companyName: "",
       heroHeading: "",
       heroSubheading: "",
-      contactEmail: "",
-      whatsappNumber: "",
     });
+    setContactDetails(initialContactDetails);
+    setSmtpSettings(initialSmtpSettings);
     setClients([]);
     setTestimonials([]);
     setClientForm(initialClient);
@@ -110,6 +191,30 @@ export default function AdminPage() {
       setMessage("Common settings updated.");
     } catch (error) {
       handleApiError(error, "Failed to update settings.");
+    }
+  };
+
+  const saveContactDetails = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    try {
+      await updateContactDetails(contactDetails);
+      await load();
+      setMessage("Contact details updated.");
+    } catch (error) {
+      handleApiError(error, "Failed to update contact details.");
+    }
+  };
+
+  const saveSmtpSettings = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    try {
+      await updateSmtpSettings(smtpSettings);
+      await load();
+      setMessage("SMTP settings updated.");
+    } catch (error) {
+      handleApiError(error, "Failed to update SMTP settings.");
     }
   };
 
@@ -171,8 +276,20 @@ export default function AdminPage() {
         <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">Admin Login</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Use the default password: <span className="font-semibold">admin123</span>
+            Default password: <span className="font-semibold">admin123</span> (configurable via <span className="font-mono">.env</span> → <span className="font-mono">ADMIN_PASSWORD</span>)
           </p>
+
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <p className="font-semibold">API status</p>
+            <p className="mt-1">
+              {apiHealth.loading ? "Checking..." : apiHealth.ok ? apiHealth.message : `Not ready: ${apiHealth.message}`}
+            </p>
+            {!apiHealth.loading && !apiHealth.ok ? (
+              <p className="mt-2 text-xs text-slate-600">
+                Start backend with <span className="font-mono">node server/index.js</span> (or <span className="font-mono">npm.cmd run server</span>).
+              </p>
+            ) : null}
+          </div>
 
           {message ? (
             <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{message}</p>
@@ -237,16 +354,6 @@ export default function AdminPage() {
               onChange={(value) => setSettings((prev) => ({ ...prev, companyName: value }))}
             />
             <Field
-              label="Contact Email"
-              value={settings.contactEmail || ""}
-              onChange={(value) => setSettings((prev) => ({ ...prev, contactEmail: value }))}
-            />
-            <Field
-              label="WhatsApp Number"
-              value={settings.whatsappNumber || ""}
-              onChange={(value) => setSettings((prev) => ({ ...prev, whatsappNumber: value }))}
-            />
-            <Field
               label="Hero Heading"
               value={settings.heroHeading || ""}
               onChange={(value) => setSettings((prev) => ({ ...prev, heroHeading: value }))}
@@ -263,6 +370,132 @@ export default function AdminPage() {
             </div>
             <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white md:col-span-2 md:w-fit">
               Save Settings
+            </button>
+          </form>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Contact Details</h2>
+          <form onSubmit={saveContactDetails} className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field
+              label="Company Name"
+              value={contactDetails.companyName || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, companyName: value }))}
+            />
+            <Field
+              label="Email"
+              type="email"
+              value={contactDetails.email || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, email: value }))}
+            />
+            <Field
+              label="WhatsApp Number"
+              value={contactDetails.whatsappNumber || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, whatsappNumber: value }))}
+            />
+            <Field
+              label="Primary Phone"
+              value={contactDetails.phonePrimary || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, phonePrimary: value }))}
+            />
+            <Field
+              label="Secondary Phone"
+              value={contactDetails.phoneSecondary || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, phoneSecondary: value }))}
+            />
+            <Field
+              label="Address Line 1"
+              value={contactDetails.addressLine1 || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, addressLine1: value }))}
+            />
+            <Field
+              label="Address Line 2"
+              value={contactDetails.addressLine2 || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, addressLine2: value }))}
+            />
+            <Field
+              label="City"
+              value={contactDetails.city || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, city: value }))}
+            />
+            <Field
+              label="State"
+              value={contactDetails.state || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, state: value }))}
+            />
+            <Field
+              label="Postal Code"
+              value={contactDetails.postalCode || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, postalCode: value }))}
+            />
+            <Field
+              label="Country"
+              value={contactDetails.country || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, country: value }))}
+            />
+            <Field
+              label="Map URL"
+              value={contactDetails.mapUrl || ""}
+              onChange={(value) => setContactDetails((prev) => ({ ...prev, mapUrl: value }))}
+            />
+            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white md:col-span-2 md:w-fit">
+              Save Contact Details
+            </button>
+          </form>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Mail Service (SMTP)</h2>
+          <form onSubmit={saveSmtpSettings} className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field
+              label="SMTP Host"
+              value={smtpSettings.host || ""}
+              onChange={(value) => setSmtpSettings((prev) => ({ ...prev, host: value }))}
+            />
+            <Field
+              label="Port"
+              type="number"
+              value={smtpSettings.port}
+              onChange={(value) =>
+                setSmtpSettings((prev) => ({ ...prev, port: Number.parseInt(value, 10) || 0 }))
+              }
+            />
+            <div className="flex items-end gap-3">
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Secure (TLS)</label>
+              <input
+                type="checkbox"
+                checked={Boolean(smtpSettings.secure)}
+                onChange={(event) => setSmtpSettings((prev) => ({ ...prev, secure: event.target.checked }))}
+                className="h-5 w-5 accent-indigo-600"
+              />
+            </div>
+            <div className="text-xs text-slate-500 md:col-span-2">
+              Current password: {smtpSettings.hasPassword ? "Saved" : "Not set"} (leave password empty to keep existing)
+            </div>
+            <Field
+              label="Username"
+              value={smtpSettings.username || ""}
+              onChange={(value) => setSmtpSettings((prev) => ({ ...prev, username: value }))}
+            />
+            <Field
+              label="Password"
+              type="password"
+              value={smtpSettings.password || ""}
+              onChange={(value) => setSmtpSettings((prev) => ({ ...prev, password: value }))}
+            />
+            <Field
+              label="From Name"
+              value={smtpSettings.fromName || ""}
+              onChange={(value) => setSmtpSettings((prev) => ({ ...prev, fromName: value }))}
+            />
+            <Field
+              label="From Email"
+              type="email"
+              value={smtpSettings.fromEmail || ""}
+              onChange={(value) => setSmtpSettings((prev) => ({ ...prev, fromEmail: value }))}
+            />
+            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white md:col-span-2 md:w-fit">
+              Save SMTP Settings
             </button>
           </form>
         </section>
